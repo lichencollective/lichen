@@ -1,0 +1,14 @@
+cors_hosts = [ "http://localhost:4200" ]
+
+[oidc]
+url = "https://rancher.home.arpa/oidc"
+client_id = "client-cnzcsvrxwk"
+client_secret = ""
+redirect_url = "http://localhost:3000/backend/oidc/callback"
+authorized_callback_urls = [ "http://localhost:4200" ]
+
+[db]
+database = "lichen"
+user = "lichen"
+password = "secret"
+host = "127.0.0.1"
