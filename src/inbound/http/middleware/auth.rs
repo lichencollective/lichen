@@ -39,6 +39,7 @@ mod tests {
     use crate::core::application::Application;
     use crate::core::application::tests::MockAppInstanceParameters;
     use crate::domain::auth::{MockAuthService, OIDCRefreshError, ServiceAuthenticatedError};
+    use crate::domain::lichen::{LichenService, MockLichenService};
     use crate::domain::session::SessionError;
     use crate::inbound::http::middleware::auth;
     use axum::Router;
@@ -70,16 +71,19 @@ mod tests {
             .times(1)
             .returning(|_| Box::pin(future::ready(Ok(true))));
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
 
         let router = Router::new()
             .route("/example", get(example))
             .route_layer(from_fn_with_state(
                 app,
-                auth::<Application<MockAuthService>>,
+                auth::<Application<MockAuthService, MockLichenService>>,
             ))
             .layer(session_layer);
 
@@ -104,16 +108,19 @@ mod tests {
             .times(1)
             .returning(|_| Box::pin(future::ready(Ok(false))));
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
 
         let router = Router::new()
             .route("/example", get(example))
             .route_layer(from_fn_with_state(
                 app,
-                auth::<Application<MockAuthService>>,
+                auth::<Application<MockAuthService, MockLichenService>>,
             ))
             .layer(session_layer);
 
@@ -139,16 +146,19 @@ mod tests {
             ))))
         });
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
 
         let router = Router::new()
             .route("/example", get(example))
             .route_layer(from_fn_with_state(
                 app,
-                auth::<Application<MockAuthService>>,
+                auth::<Application<MockAuthService, MockLichenService>>,
             ))
             .layer(session_layer);
 
@@ -174,16 +184,19 @@ mod tests {
             )))
         });
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
 
         let router = Router::new()
             .route("/example", get(example))
             .route_layer(from_fn_with_state(
                 app,
-                auth::<Application<MockAuthService>>,
+                auth::<Application<MockAuthService, MockLichenService>>,
             ))
             .layer(session_layer);
 

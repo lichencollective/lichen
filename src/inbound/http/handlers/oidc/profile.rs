@@ -27,6 +27,7 @@ mod tests {
     use crate::core::application::tests::MockAppInstanceParameters;
     use crate::domain;
     use crate::domain::auth::{MockAuthService, ServiceProfileError, ServiceProfileResult};
+    use crate::domain::lichen::MockLichenService;
     use crate::inbound::http::router;
     use axum_test::TestServer;
     use std::future;
@@ -47,10 +48,13 @@ mod tests {
             })))
         });
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
         let session_store = MemoryStore::default();
         let router = router(app, session_store);
         let server = TestServer::new(router).unwrap();
@@ -72,10 +76,13 @@ mod tests {
             .times(1)
             .returning(|_| Box::pin(future::ready(Err(ServiceProfileError::Unauthenticated))));
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
         let session_store = MemoryStore::default();
         let router = router(app, session_store);
         let server = TestServer::new(router).unwrap();
@@ -98,10 +105,13 @@ mod tests {
             ))))
         });
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
         let session_store = MemoryStore::default();
         let router = router(app, session_store);
         let server = TestServer::new(router).unwrap();

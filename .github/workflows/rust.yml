@@ -1,0 +1,70 @@
+name: PR Checks
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    branches:
+      - 'master'
+jobs:
+  linux:
+    name: Rust build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up environment
+        run: |
+          echo "DATABASE_URL=postgres://postgres:secret@localhost:${{ job.services.postgres.ports[5432] }}/postgres" >> "$GITHUB_ENV"
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+          targets: x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu
+          components: clippy, rustfmt
+
+      - name: Run cargo fmt
+        if: github.ref != 'refs/heads/master'
+        run: cargo fmt --all -- --check
+
+      - uses: taiki-e/install-action@3f67faa728964808f52294a9cd15561b15550b28 # v2.67.19
+        with:
+          tool: sqlx-cli@0.8.3
+
+      - name: Migrate the database
+        run: |
+          sqlx migrate run
+
+      - name: Run cargo test
+        if: github.ref != 'refs/heads/master'
+        env:
+          DATABASE_URL: postgres://postgres:secret@localhost:${{ job.services.postgres.ports[5432] }}/postgres
+        run: cargo test
+
+      - name: Build release artifact
+        run: cargo build ${{ github.ref == 'refs/heads/master' && '--release' || '' }}
+
+      - name: Run cargo clippy
+        if: github.ref != 'refs/heads/master'
+        run: cargo clippy -- -D warnings
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        if: github.ref == 'refs/heads/master'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -46,8 +46,9 @@ pub async fn oidc_login<S: ApplicationServices>(
 mod tests {
     use crate::core::application::Application;
     use crate::core::application::tests::MockAppInstanceParameters;
-    use crate::core::config::{Config, OIDCConfig, RedisConfig};
+    use crate::core::config::{Config, DB, OIDCConfig, RedisConfig};
     use crate::domain::auth::{MockAuthService, ServiceLoginError, ServiceLoginResult};
+    use crate::domain::lichen::MockLichenService;
     use crate::domain::session::SessionError;
     use crate::inbound::http::router;
     use axum_test::TestServer;
@@ -66,6 +67,7 @@ mod tests {
                 redirect_url: "".to_string(),
                 authorized_callback_urls: vec!["https://suse.com".to_string()],
             },
+            db: DB::default(),
             secure_session: false,
         }
     }
@@ -79,10 +81,13 @@ mod tests {
             })))
         });
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: Some(config_with_authorized_callback_urls()),
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: Some(config_with_authorized_callback_urls()),
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
         let session_store = MemoryStore::default();
         let router = router(app, session_store);
         let server = TestServer::new(router).unwrap();
@@ -99,10 +104,13 @@ mod tests {
         let mut auth_service = MockAuthService::new();
         auth_service.expect_login().times(0);
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: None,
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: None,
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
         let session_store = MemoryStore::default();
         let router = router(app, session_store);
         let server = TestServer::new(router).unwrap();
@@ -123,10 +131,13 @@ mod tests {
             ))))
         });
 
-        let app = Application::<MockAuthService>::mock_instance(MockAppInstanceParameters {
-            config: Some(config_with_authorized_callback_urls()),
-            auth_service: Some(auth_service),
-        });
+        let app = Application::<MockAuthService, MockLichenService>::mock_instance(
+            MockAppInstanceParameters {
+                config: Some(config_with_authorized_callback_urls()),
+                auth_service: Some(auth_service),
+                lichen_service: None,
+            },
+        );
         let session_store = MemoryStore::default();
         let router = router(app, session_store);
         let server = TestServer::new(router).unwrap();
