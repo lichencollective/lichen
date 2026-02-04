@@ -13,6 +13,33 @@ pub enum ConfigError {
 }
 
 #[derive(Deserialize, Clone, Default)]
+pub struct DB {
+    pub database: String,
+    pub host: String,
+    pub user: String,
+    pub password: String,
+}
+
+impl DB {
+    fn is_valid(&self) -> bool {
+        !self.database.is_empty()
+            && !self.host.is_empty()
+            && !self.password.is_empty()
+            && !self.user.is_empty()
+    }
+
+    pub fn connection_string(&self) -> String {
+        let password: String =
+            url::form_urlencoded::byte_serialize(self.password.as_bytes()).collect();
+
+        format!(
+            "postgres://{}:{}@{}/{}",
+            self.user, password, self.host, self.database
+        )
+    }
+}
+
+#[derive(Deserialize, Clone, Default)]
 pub struct OIDCConfig {
     pub url: String,
     pub client_id: String,
@@ -69,6 +96,7 @@ pub struct Config {
     pub secure_session: bool,
     #[serde(default)]
     pub redis: RedisConfig,
+    pub db: DB,
 }
 
 impl Config {
@@ -80,5 +108,9 @@ impl Config {
         let config: Config = toml::from_str(config_text.as_str())?;
 
         Ok(config)
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.db.is_valid()
     }
 }

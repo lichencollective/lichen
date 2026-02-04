@@ -7,16 +7,22 @@ use lichen::core::application::{Application, ApplicationServices};
 use lichen::core::config::Config;
 use lichen::domain::auth;
 use lichen::inbound::http::router;
+use lichen::outbound::db::connection::Db;
+use lichen::outbound::db::repository::Repository;
 use lichen::outbound::oidc::adapter::{NewOIDCServiceParams, OIDCAdapter};
 use lichen::outbound::session::{SessionAdapter, SessionAdapterFactory};
+use sqlx::Postgres;
+use sqlx::postgres::PgPoolOptions;
 use std::process::exit;
 use tower_sessions_redis_store::RedisStore;
 use tracing::error;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-type ApplicationAlias =
-    Application<auth::Service<SessionAdapter, OIDCAdapter, SessionAdapterFactory>>;
+type ApplicationAlias = Application<
+    auth::Service<SessionAdapter, OIDCAdapter, SessionAdapterFactory>,
+    lichen::domain::lichen::Service<Repository>,
+>;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -52,8 +58,19 @@ async fn main() {
 
 async fn start(cli: Cli) -> anyhow::Result<(), anyhow::Error> {
     let config = Config::parse(cli.config_path)?;
+    if !config.is_valid() {
+        return Err(anyhow!("config is not valid"));
+    }
 
-    let application = create_application(config).await?;
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(config.db.connection_string().as_str())
+        .await
+        .expect("could not connect to the database");
+
+    sqlx::migrate!("./migrations").run(&pool).await?;
+
+    let application = create_application(pool, config).await?;
 
     match cli.command {
         None => Ok(()),
@@ -62,7 +79,12 @@ async fn start(cli: Cli) -> anyhow::Result<(), anyhow::Error> {
         },
     }
 }
-async fn create_application(config: Config) -> Result<ApplicationAlias, anyhow::Error> {
+async fn create_application(
+    pool: sqlx::Pool<Postgres>,
+    config: Config,
+) -> Result<ApplicationAlias, anyhow::Error> {
+    let db = Db::new(pool);
+
     tracing::debug!("creating oidc service");
     let oidc_service = OIDCAdapter::new(NewOIDCServiceParams {
         issuer_url: config.oidc.url.clone(),
@@ -74,11 +96,13 @@ async fn create_application(config: Config) -> Result<ApplicationAlias, anyhow::
     .map_err(|e| anyhow!(e.to_string()))?;
     tracing::debug!("created oidc service");
 
+    let repo = Repository::new(db.clone().pool());
     let oidc_service = oidc_service;
     let session_factory = SessionAdapterFactory::new();
     let auth_service = auth::Service::new(oidc_service, session_factory);
+    let lichen_service = lichen::domain::lichen::Service::new(repo);
 
-    Ok(Application::new(config, auth_service))
+    Ok(Application::new(config, auth_service, lichen_service))
 }
 
 async fn run_server(app: ApplicationAlias) -> anyhow::Result<()> {
