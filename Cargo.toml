@@ -29,7 +29,7 @@ clap = { version = "4", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
 openidconnect = { version = "4"}
 oauth2 = "5"
-tower-sessions = { version = "0.14", features = ["private"] }
+tower-sessions = { version = "0.15", features = ["private"] }
 tower-sessions-redis-store = "0.16"
 fred = { version = "10", features = ["sentinel-client"]}
 base64 = "0.22"
