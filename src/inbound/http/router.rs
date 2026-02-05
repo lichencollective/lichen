@@ -1,5 +1,6 @@
 use crate::core::application::{Application, ApplicationServices};
 use crate::domain::auth::AuthService;
+use crate::domain::lichen::LichenService;
 use crate::inbound::http::handlers::{
     oidc_callback, oidc_login, oidc_logout, oidc_profile, server_health,
 };
@@ -22,9 +23,10 @@ use tower_sessions::{Expiry, SessionManagerLayer, SessionStore};
 
 pub fn router<
     AUTH: AuthService + Send + Sync + 'static,
+    LICHEN: LichenService + Send + Sync + 'static,
     Store: SessionStore + Clone + Send + Sync + 'static,
 >(
-    application: Application<AUTH>,
+    application: Application<AUTH, LICHEN>,
     redis_session_store: Store,
 ) -> Router {
     let config = application.config();
