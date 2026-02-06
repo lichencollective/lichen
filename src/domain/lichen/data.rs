@@ -21,7 +21,10 @@ pub struct Team {
 #[derive(Clone)]
 pub struct TeamGroup {
     pub id: Uuid,
+    pub team_id: Uuid,
+    pub external_id: String,
     pub name: String,
+    pub role: String,
     pub created_at: PrimitiveDateTime,
     pub updated_at: PrimitiveDateTime,
 }

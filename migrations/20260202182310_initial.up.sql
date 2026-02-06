@@ -9,11 +9,11 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE teams
 (
-    id         uuid        not null primary key,
-    name       varchar(255)        not null,
+    id         uuid         not null primary key,
+    name       varchar(255) not null,
 
-    created_at    timestamp    not null default current_timestamp,
-    updated_at    timestamp    not null default current_timestamp
+    created_at timestamp    not null default current_timestamp,
+    updated_at timestamp    not null default current_timestamp
 );
 
 CREATE TRIGGER update_teams_updated_at
@@ -24,12 +24,14 @@ EXECUTE FUNCTION update_timestamp();
 
 CREATE TABLE team_groups
 (
-    id         uuid        not null primary key,
-    team_id    uuid not null,
-    name       varchar(255)        not null,
+    id          uuid         not null primary key,
+    team_id     uuid         not null,
+    external_id varchar(225) not null,
+    name        varchar(255) not null,
+    role        varchar(255) not null,
 
-    created_at    timestamp    not null default current_timestamp,
-    updated_at    timestamp    not null default current_timestamp
+    created_at  timestamp    not null default current_timestamp,
+    updated_at  timestamp    not null default current_timestamp
 );
 
 CREATE TRIGGER update_team_groups_updated_at
@@ -40,14 +42,14 @@ EXECUTE FUNCTION update_timestamp();
 
 CREATE TABLE projects
 (
-    id         uuid        not null primary key,
-    name       varchar(255)        not null,
-    team_id    uuid        not null,
+    id         uuid         not null primary key,
+    name       varchar(255) not null,
+    team_id    uuid         not null,
 
-    tags       JSONB       NOT NULL DEFAULT '{}'::jsonb,
+    tags       JSONB        NOT NULL DEFAULT '{}'::jsonb,
 
-    created_at    timestamp    not null default current_timestamp,
-    updated_at    timestamp    not null default current_timestamp,
+    created_at timestamp    not null default current_timestamp,
+    updated_at timestamp    not null default current_timestamp,
 
     constraint fk_projects_team_id foreign key (team_id) references teams (id) on delete cascade
 );
