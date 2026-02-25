@@ -41,7 +41,7 @@ jobs:
         if: github.ref != 'refs/heads/master'
         run: cargo fmt --all -- --check
 
-      - uses: taiki-e/install-action@d4422f254e595ee762a758628fe4f16ce050fa2e # v2.67.28
+      - uses: taiki-e/install-action@305bebabd4457bed9b82541755f034994382465b # v2.68.10
         with:
           tool: sqlx-cli@0.8.3
 
